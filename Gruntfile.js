@@ -7,12 +7,12 @@ module.exports = function(grunt) {
   require('jit-grunt')(grunt);
 
   var pkg = grunt.file.readJSON('package.json');
-  var config = grunt.file.readJSON('config.json');
+  var credentials = grunt.file.readJSON('credentials.json');
 
   grunt.initConfig({
 
     pkg: pkg,
-    config: config,
+    credentials: credentials,
 
     watch: {
       gruntfile: {
@@ -115,6 +115,15 @@ module.exports = function(grunt) {
           src: '*.html',
           dest: '.tmp'
         }]
+      },
+      cdn: {
+        files: [{
+          expand: true,
+          cwd: '<%= pkg.config.dist %>',
+          src: ['*.inline.html'],
+          dest: '<%= pkg.config.dist %>',
+          ext: '.cdn.html'
+        }]
       }
     },
 
@@ -167,15 +176,15 @@ module.exports = function(grunt) {
 
     aws_s3: {
       options: {
-        accessKeyId: '<%= config.s3.key %>',
-        secretAccessKey: '<%= config.s3.secret %>',
-        region: '<%= config.s3.region %>',
+        accessKeyId: '<%= credentials.s3.key %>',
+        secretAccessKey: '<%= credentials.s3.secret %>',
+        region: '<%= credentials.s3.region %>',
         uploadConcurrency: 5,
         downloadConcurrency: 5
       },
       dist: {
         options: {
-          bucket: '<%= config.s3.bucketname %>',
+          bucket: '<%= credentials.s3.bucketname %>',
           differential: true,
           params: {
             CacheControl: '2000'
@@ -185,36 +194,35 @@ module.exports = function(grunt) {
           expand: true,
           cwd: '<%= pkg.config.dist %>',
           src: '**',
-          dest: '<%= config.s3.bucketdir %>'
+          dest: '<%= credentials.s3.bucketdir %>'
         }]
       }
     },
 
     cdn: {
       options: {
-        cdn: '<%= config.s3.bucketuri %>/<%= config.s3.bucketname %>/<%= config.s3.bucketdir %>/',
+        cdn: '<%= credentials.s3.bucketuri %>/<%= credentials.s3.bucketname %>/<%= credentials.s3.bucketdir %>/',
         flatten: true,
         supportedTypes: 'html'
       },
       dist: {
         cwd: '<%= pkg.config.dist %>',
         dest: '<%= pkg.config.dist %>',
-        src: ['*.html', '*.css']
+        src: ['*.cdn.html']
       }
     },
 
     mailgun: {
       dist: {
         options: {
-          key: '<%= config.mailgun.api_key %>',
-          sender: '<%= config.mailgun.sender %>',
-          recipient: '<%= config.mailgun.recipient %>',
-          subject: '<%= config.mailgun.subject %>',
+          key: '<%= credentials.mailgun.api_key %>',
+          sender: '<%= credentials.mailgun.sender %>',
+          recipient: '<%= credentials.mailgun.recipient %>',
+          subject: 'Email test',
           preventThreading: true,
           hideRecipient: true
-
         },
-        src: ['<%= pkg.config.dist %>/*.inline.html']
+        src: ['<%= pkg.config.dist %>/*.cdn.html']
       }
     }
 
@@ -235,15 +243,22 @@ module.exports = function(grunt) {
     'copy:dist',
     'uncss',
     'processhtml',
-    'premailer',
-    'aws_s3',
-    'cdn'
+    'premailer'
   ]);
 
-  grunt.registerTask('send', [
+  grunt.registerTask('upload', [
     'default',
-    'mailgun:dist'
+    'copy:cdn',
+    'cdn',
+    'aws_s3'
   ]);
+
+  grunt.registerTask('send', 'send a test email', function () {
+    grunt.task.run([
+      'upload',
+      'mailgun:dist'
+    ]);
+  });
 
   grunt.registerTask('default', [
     'eslint',
