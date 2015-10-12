@@ -1,10 +1,14 @@
 # Email workflow
 
-> A workflow for building emails
+> A Grunt workflow for building emails and sending them through Mailgun API
 
 ## Setup
 
 ### Prerequisites
+
+
+- An AWS S3 account
+- A Mailgun account (optional)
 
 ```
 gem install premailer hpricot
@@ -23,7 +27,7 @@ npm install
 
 Put your HTML file and your assets (images, CSS, SASS, etc...) in the `src` directory.
 
-Your HTML file MUST comply the following markup :
+Your HTML file MUST comply the following markup:
 
 ```html
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -45,16 +49,20 @@ Your HTML file MUST comply the following markup :
 
 **Please follow those prerequisites:**
 
-1. All files MUST be at the root of the `src` directory (no subfolders)
-2. Link your SASS/SCSS files with a `.css` extension
-3. Surround your stylesheets with the special markup `<!-- build:css email.css -->[...]<!-- /build -->`
+1. All files **MUST** be at the root of the `src` directory (no subfolders)
+2. **Link your SASS/SCSS files with a `.css` extension** (see above)
+3. Surround your stylesheets with the **special markup** `<!-- build:css email.css -->[...]<!-- /build -->`
+4. **Create a `config.json`** at the root of your project based on the `config.sample.json` template file.
 
 ## Usage
 
-`grunt serve` while you're working on your email design. This will open your browser and watch for changes on your files (html, css, sass).
+**`grunt serve`** while you're working on your email design. This will open your browser and watch for changes on your files (html, css, sass).
 
-When you're ready, `grunt build` will generate a pre-flight HTML email in the `dist` directory by :
+When you're ready, issuing the **`grunt`** command will generate a pre-flight HTML email in the `dist` directory by:
 - minifying your images
 - converting your SASS to CSS
 - remove unnecessary CSS  
 - inlining your CSS
+- moving your assets to S3
+
+If you have a Mailgun account, you can test your email by running **`grunt send`**.
